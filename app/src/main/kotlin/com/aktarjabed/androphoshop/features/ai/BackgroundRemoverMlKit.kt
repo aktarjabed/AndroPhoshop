@@ -1,80 +1,56 @@
 package com.aktarjabed.androphoshop.features.ai
 
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PointF
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.segmentation.Segmentation
+import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenter
 import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.nio.ByteBuffer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.hypot
 
-/**
- * Real, on-device background removal using ML Kit Selfie Segmentation.
- * Produces an RGBA bitmap where background pixels are transparent.
- */
 class BackgroundRemoverMlKit {
+  private val segmenter = SelfieSegmenter.getClient(
+    SelfieSegmenterOptions.Builder()
+      .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE)
+      .enableRawSizeMask()
+      .build()
+  )
+  suspend fun removeBackground(src: Bitmap, focus: PointF? = null): Bitmap = suspendCancellableCoroutine { cont ->
+    val image = InputImage.fromBitmap(src, 0)
+    segmenter.process(image)
+      .addOnSuccessListener { mask ->
+        try {
+          val mw = mask.width; val mh = mask.height
+          val buf = mask.buffer; buf.rewind()
+          val alpha = Bitmap.createBitmap(mw, mh, Bitmap.Config.ALPHA_8)
+          val arr = ByteArray(mw*mh)
 
-    private val options = SelfieSegmenterOptions.Builder()
-        .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE)
-        .enableRawSizeMask() // higher quality mask
-        .build()
+          val fx = focus?.x?.times(mw / src.width.toFloat()) ?: mw/2f
+          val fy = focus?.y?.times(mh / src.height.toFloat()) ?: mh/2f
+          val maxDist = hypot(mw.toFloat(), mh.toFloat())
 
-    private val segmenter by lazy { Segmentation.getClient(options) }
-
-    suspend fun removeBackground(src: Bitmap, focus: PointF? = null): Bitmap = suspendCancellableCoroutine { cont ->
-        val image = InputImage.fromBitmap(src, 0)
-        segmenter.process(image)
-            .addOnSuccessListener { mask ->
-                try {
-                    // ML Kit returns a FloatArray mask (values 0..1) with size of the analysis image.
-                    val maskBuffer = mask.buffer  // FloatBuffer
-                    val mw = mask.width
-                    val mh = mask.height
-
-                    // Convert FloatBuffer -> Int alpha map and scale to src size if needed
-                    val alphaBitmap = Bitmap.createBitmap(mw, mh, Bitmap.Config.ALPHA_8)
-                    val alphaArray = ByteArray(mw * mh)
-                    maskBuffer.rewind()
-                    var i = 0
-                    while (maskBuffer.hasRemaining()) {
-                        val confidence = maskBuffer.get() // foreground probability [0..1]
-                        val a = (confidence * 255f).toInt().coerceIn(0, 255)
-                        alphaArray[i++] = a.toByte()
-                    }
-                    alphaBitmap.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(alphaArray))
-
-                    // Scale alpha to source size when ML mask size != source size
-                    val scaledAlpha = if (mw != src.width || mh != src.height) {
-                        Bitmap.createScaledBitmap(alphaBitmap, src.width, src.height, true)
-                    } else alphaBitmap
-
-                    val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(out)
-
-                    // Draw the source with alpha mask (DST_IN keeps only foreground)
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        // draw source first
-                    }
-                    canvas.drawBitmap(src, 0f, 0f, paint)
-
-                    // Apply alpha mask using DST_IN so destination keeps only masked (foreground) pixels
-                    val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
-                    }
-                    canvas.drawBitmap(scaledAlpha, 0f, 0f, maskPaint)
-                    maskPaint.xfermode = null
-
-                    cont.resume(out)
-                } catch (e: Exception) {
-                    cont.resumeWithException(e)
-                }
+          var i = 0
+          while (buf.hasRemaining()) {
+            var v = buf.get() // 0..1
+            if (focus != null) {
+              val x = (i % mw).toFloat()
+              val y = (i / mw).toFloat()
+              val fall = (1f - (hypot(x - fx, y - fy) / maxDist)).coerceIn(0f, 1f)
+              v *= 0.5f + 0.5f * fall
             }
-            .addOnFailureListener { e ->
-                cont.resumeWithException(e)
-            }
-
-        cont.invokeOnCancellation {
-            // nothing to cancel explicitly in ML Kit single-image mode
-        }
-    }
+            arr[i++] = (v * 255f).toInt().toByte()
+          }
+          alpha.copyPixelsFromBuffer(ByteBuffer.wrap(arr))
+          val soft = MaskRefiner.featherEdges(alpha, 6f)
+          val out = MaskRefiner.applyAlphaMask(src, soft)
+          cont.resume(out)
+        } catch (e: Exception) { cont.resumeWithException(e) }
+      }
+      .addOnFailureListener { cont.resumeWithException(it) }
+  }
 }

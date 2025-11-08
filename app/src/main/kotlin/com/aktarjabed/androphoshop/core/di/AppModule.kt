@@ -9,8 +9,7 @@ import com.aktarjabed.androphoshop.data.repository.ProjectRepositoryImpl
 import com.aktarjabed.androphoshop.domain.repository.ImageRepository
 import com.aktarjabed.androphoshop.domain.repository.ProjectRepository
 import com.aktarjabed.androphoshop.domain.use_cases.*
-import com.aktarjabed.androphoshop.features.ai.AIEnhancementEngine
-import com.aktarjabed.androphoshop.features.ai.BackgroundRemover
+import com.aktarjabed.androphoshop.features.ai.*
 import com.aktarjabed.androphoshop.features.editor.processors.*
 import dagger.Module
 import dagger.Provides
@@ -50,33 +49,34 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideImageRepository(@ApplicationContext context: Context): ImageRepository {
-        return ImageRepositoryImpl(context, context.contentResolver)
+    fun provideImageRepository(@ApplicationContext c: Context): ImageRepository {
+        return ImageRepositoryImpl(c, c.contentResolver)
     }
 
     @Provides
     @Singleton
-    fun provideAIEnhancementEngine() = AIEnhancementEngine()
+    fun provideLayerManager() = LayerManager()
 
     @Provides
     @Singleton
-    fun provideBackgroundRemover() = BackgroundRemover()
+    fun provideImageProcessor() = ImageProcessor()
 
+    @Provides
+    @Singleton
+    fun provideFilterProcessor() = FilterProcessor()
+
+    @Provides
+    @Singleton
+    fun provideBrushProcessor() = BrushProcessor()
+
+    @Provides
+    @Singleton
+    fun provideTextProcessor() = TextProcessor()
+
+    // AI
     @Provides
     @Singleton
     fun provideBackgroundRemoverMlKit() = BackgroundRemoverMlKit()
-
-    @Provides
-    @Singleton
-    fun provideFilterProcessor(): FilterProcessor {
-        return FilterProcessor()
-    }
-
-    @Provides
-    @Singleton
-    fun provideCropProcessor(): CropProcessor {
-        return CropProcessor()
-    }
 
     @Provides
     @Singleton
@@ -92,11 +92,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAIEnhancementEngine() = AIEnhancementEngine() // optional simple enhancer
+
+    @Provides
+    @Singleton
     fun provideEditorUseCases(
         imageRepository: ImageRepository,
         projectRepository: ProjectRepository,
         aiEnhancementEngine: AIEnhancementEngine,
-        backgroundRemover: BackgroundRemover,
         backgroundRemoverMlKit: BackgroundRemoverMlKit,
         filterProcessor: FilterProcessor,
         cropProcessor: CropProcessor
@@ -108,7 +111,7 @@ object AppModule {
             updateProject = UpdateProjectUseCase(projectRepository),
             getProjects = GetProjectsUseCase(projectRepository),
             enhanceImage = EnhanceImageUseCase(aiEnhancementEngine),
-            removeBackground = RemoveBackgroundUseCase(backgroundRemover),
+            removeBackground = RemoveBackgroundUseCase(BackgroundRemover()),
             removeBackgroundMlKit = RemoveBackgroundMlKitUseCase(backgroundRemoverMlKit),
             applyFilter = ApplyFilterUseCase(filterProcessor),
             cropImage = CropImageUseCase(cropProcessor)
