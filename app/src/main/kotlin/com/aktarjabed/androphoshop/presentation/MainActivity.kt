@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
 fun AndroPhoshopApp() {
     val darkTheme = isSystemInDarkTheme()
     var appState by remember { mutableStateOf(AppState.IDLE) }
+    val navController = androidx.navigation.compose.rememberNavController()
 
     // Handle app state changes
     LaunchedEffect(Unit) {
@@ -49,7 +50,7 @@ fun AndroPhoshopApp() {
     }
 
     AndroPhoshopTheme(darkTheme = darkTheme) {
-        AppNavigation(appState = appState)
+        AppNavigation(appState = appState, navController = navController)
     }
 }
 

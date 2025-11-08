@@ -30,15 +30,7 @@ fun AppNavigation(
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToEditor = { imageUri ->
-                    navController.navigate(Screen.Editor.createRoute(imageUri))
-                },
-                onNavigateToCamera = {
-                    navController.navigate(Screen.Camera.route)
-                },
-                onNavigateToGallery = {
-                    navController.navigate(Screen.Gallery.route)
-                }
+                navController = navController
             )
         }
 

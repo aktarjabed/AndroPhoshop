@@ -1,5 +1,7 @@
 package com.aktarjabed.androphoshop.presentation.screens.home
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,19 +16,29 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.aktarjabed.androphoshop.R
 import com.aktarjabed.androphoshop.presentation.components.FeatureCard
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToEditor: (String) -> Unit,
-    onNavigateToCamera: () -> Unit,
-    onNavigateToGallery: () -> Unit,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
     // This would be populated by a ViewModel in a full implementation
     val recentProjects by remember { mutableStateOf(emptyList<ProjectItem>()) }
+
+    val pickImage = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            val encoded = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.name())
+            navController.navigate("editor/$encoded")
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -59,8 +71,8 @@ fun HomeScreen(
             )
 
             val quickActions = getQuickActions(
-                onNavigateToCamera = onNavigateToCamera,
-                onNavigateToGallery = onNavigateToGallery
+                onNavigateToCamera = { /* TODO */ },
+                onNavigateToGallery = { pickImage.launch(ActivityResultContracts.PickVisualMedia.ImageOnly) }
             )
 
             LazyVerticalGrid(
