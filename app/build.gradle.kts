@@ -21,19 +21,26 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("com.google.dagger:hilt-android:2.52")
-    kapt("com.google.dagger:hilt-android-compiler:2.52")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-    // optional: CameraX, Room, MLKit
+  implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+  implementation("androidx.compose.ui:ui")
+  implementation("androidx.compose.material3:material3")
+  implementation("androidx.activity:activity-compose:1.9.3")
+  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+  implementation("androidx.navigation:navigation-compose:2.7.7")
+  implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // ML Kit: On-device selfie segmentation (person/background mask)
-    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta4")
+  implementation("com.google.dagger:hilt-android:2.52")
+  kapt("com.google.dagger:hilt-android-compiler:2.52")
+  implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+  // CameraX (if you use CameraScreen)
+  implementation("androidx.camera:camera-camera2:1.4.0")
+  implementation("androidx.camera:camera-lifecycle:1.4.0")
+  implementation("androidx.camera:camera-view:1.4.0")
+
+  // ML Kit Selfie Segmentation (on-device)
+  implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta4")
 }

@@ -53,3 +53,7 @@
 -keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
 -keep class com.google.android.gms.internal.mlkit_vision_segmentation_selfie.** { *; }
 -dontwarn com.google.mlkit.**
+
+-dontwarn dagger.hilt.internal.**
+-dontwarn javax.annotation.**
+-keepclassmembers class kotlinx.coroutines.DebugProbesKt { *; }
