@@ -1,7 +1,7 @@
 # Add your ProGuard rules here
 
 # Hilt
--keep class com.androphoshop.Hilt_* { *; }
+-keep class com.aktarjabed.androphoshop.Hilt_* { *; }
 -dontwarn dagger.hilt.internal.processedrootsentinel.codegen.*
 -keepclassmembers class ** {
     @dagger.hilt.android.internal.managers.ViewComponentManager.ViewWithFragmentComponent *;
@@ -34,7 +34,7 @@
 }
 
 # Keep model classes (data classes)
--keep class com.androphoshop.**.models.** { *; }
+-keep class com.aktarjabed.androphoshop.**.models.** { *; }
 
 # Keep composable functions
 -keepclassmembers class * {
@@ -48,3 +48,8 @@
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {
     * SUPPORTED_DISPATCHERS;
 }
+# ML Kit keep rules (conservative, most are kept by AARs already)
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_segmentation_selfie.** { *; }
+-dontwarn com.google.mlkit.**
